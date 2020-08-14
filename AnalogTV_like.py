@@ -2,13 +2,24 @@
 import sys
 import numpy as np
 from PIL import Image, ImageFilter,ImageChops,ImageDraw,ImageEnhance
-import os
+import os,tkinter, tkinter.filedialog, tkinter.messagebox
 
-TRANSMITTANCE = int(255*0.6)
-CONTRAST = 0.8
-BRIGHTNESS = 1.3
-RED_THRESHOLD = 15
+
 TV_Like = 'n'
+
+cnt=0
+fname = 'setting.txt'
+with open(fname,"r") as file:
+    for i in file:
+        if cnt == 0:
+            TRANSMITTANCE=float(i.rstrip('\n'))
+        elif cnt == 1:
+            CONTRAST=float(i.rstrip('\n'))
+        elif cnt == 2:
+            BRIGHTNESS=float(i.rstrip('\n'))
+        elif cnt == 3:
+            RED_THRESHOLD=float(i.rstrip('\n'))
+        cnt+=1
 
 def AnalogLike_noise(img):
     draw_flag=False
@@ -16,7 +27,7 @@ def AnalogLike_noise(img):
     width,height = img.size
     for i in range(height):
         if draw_flag:
-            draw.line(((0,i),(width,i)),TRANSMITTANCE,1)
+            draw.line(((0,i),(width,i)),int(TRANSMITTANCE),1)
         draw_flag = not draw_flag
     return img
 
@@ -32,18 +43,27 @@ def Color_setting(img):
                 next_b=b
             if y==0 and x==0:old_g=g
 
-            if not r+RED_THRESHOLD>255:
-                r+=RED_THRESHOLD
+            if not r+int(RED_THRESHOLD)>255:
+                r+=int(RED_THRESHOLD)
             img.putpixel((x, y), (r, old_g, next_b, _))
             old_g=g
 
     return img
-    #return  img
+
 try:
     def main():
-        print('AnalogTVLike-Converter')
-        image_data=input('plz image pass:')
+        # ファイル選択ダイアログの表示
+        root = tkinter.Tk()
+        root.withdraw()
+        fTyp1 = [("", "*.png")]
+        iDir = os.path.abspath(os.path.dirname(__file__))
+        image_data = tkinter.filedialog.askopenfilename(filetypes=fTyp1,initialdir=iDir)
+        print('AnalogTVLike-Converter START')
+        #image_data=input('plz image pass:')
         if os.path.isfile(image_data):
+            print(image_data)
+            title=image_data[:-4]
+            print(title)
             input_img = Image.open(image_data)
         else:
             print('this image not exist.')
@@ -62,12 +82,12 @@ try:
         #透明化のためにRGBAに変換
         new_gray_img = noise_img.convert('RGBA')
         #グレースケールを透過
-        new_gray_img.putalpha(TRANSMITTANCE)
+        new_gray_img.putalpha(int(TRANSMITTANCE))
         #合成（乗算）
         mix_img=ImageChops.multiply(input_img, new_gray_img)
 
         Analoglike_img = Color_setting(mix_img)
-        Analoglike_img.putalpha(TRANSMITTANCE)
+        Analoglike_img.putalpha(int(TRANSMITTANCE))
         new_mix_img = ImageChops.multiply(input_img, Analoglike_img)
         # enhancerオブジェクト生成
         enhancer = ImageEnhance.Contrast(new_mix_img)
@@ -80,16 +100,16 @@ try:
         enhance_image.putalpha(255)
         TV_Like=input('add frame?[y/N]') or 'n'
         if TV_Like=='y' or TV_Like=='Y':
-            frame = Image.open('C:/cv_img/tmp/frame.png')
+            frame = Image.open('sample/frame.png')
             frame_resize=frame.resize(enhance_image.size)
             frame_resize = frame_resize.convert('RGBA')
             enhance_image.paste(frame_resize,(0,0),frame_resize.split()[3])
-            title = ('frame_')
+            out_frame = ('_frame_')
         else:
-            title=('no_frame_')
+            out_frame =('_')
         result_img = enhance_image
         result_img.show()
-        result_img.save(title+'output.png')
+        result_img.save(title+out_frame+'output.png')
         print('output success!!')
 
     if __name__ == '__main__':
