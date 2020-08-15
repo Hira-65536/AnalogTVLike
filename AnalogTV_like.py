@@ -18,7 +18,10 @@ with open(fname,"r") as file:
         elif cnt == 2:
             BRIGHTNESS=float(i.rstrip('\n'))
         elif cnt == 3:
+            GAUSSIAN=float(i.rstrip('\n'))
+        elif cnt == 4:
             RED_THRESHOLD=float(i.rstrip('\n'))
+
         cnt+=1
 
 def AnalogLike_noise(img):
@@ -43,7 +46,9 @@ def Color_setting(img):
                 next_b=b
             if y==0 and x==0:old_g=g
 
-            if not r+int(RED_THRESHOLD)>255:
+            if r+int(RED_THRESHOLD)>255:
+                r=254
+            else:
                 r+=int(RED_THRESHOLD)
             img.putpixel((x, y), (r, old_g, next_b, _))
             old_g=g
@@ -63,7 +68,6 @@ try:
         if os.path.isfile(image_data):
             print(image_data)
             title=image_data[:-4]
-            print(title)
             input_img = Image.open(image_data)
         else:
             print('this image not exist.')
@@ -74,7 +78,6 @@ try:
             y=1080
             input_img=input_img.resize((x,y))
             print('resize image')
-
         input_img = input_img.convert('RGBA')
         gray_img = input_img.convert('L')
         #ノイズの追加
@@ -98,8 +101,10 @@ try:
         # enhancerオブジェクトの強調
         enhance_image = enhancer.enhance(BRIGHTNESS)
         enhance_image.putalpha(255)
-        TV_Like=input('add frame?[y/N]') or 'n'
-        if TV_Like=='y' or TV_Like=='Y':
+        enhance_image.filter(ImageFilter.GaussianBlur(GAUSSIAN))
+        #TV_Like=input('add frame?[y/N]') or 'n'
+        TV_Like=tkinter.messagebox.askquestion('showquestion', 'フレームを追加しますか？')
+        if TV_Like=='yes':
             frame = Image.open('sample/frame.png')
             frame_resize=frame.resize(enhance_image.size)
             frame_resize = frame_resize.convert('RGBA')
@@ -109,8 +114,11 @@ try:
             out_frame =('_')
         result_img = enhance_image
         result_img.show()
-        result_img.save(title+out_frame+'output.png')
-        print('output success!!')
+        if 'yes'==tkinter.messagebox.askquestion('showquestion', 'これで保存しますか？'):
+            result_img.save(title+out_frame+'output.png')
+            print('output success!!')
+        else:
+            print('output failed!!')
 
     if __name__ == '__main__':
         main()
