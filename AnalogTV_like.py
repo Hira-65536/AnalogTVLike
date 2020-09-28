@@ -7,6 +7,8 @@ import os,tkinter, tkinter.filedialog, tkinter.messagebox
 
 TV_Like = 'n'
 GIF_FLAG = False
+
+#setting.txtから読み取り
 cnt=0
 fname = 'setting.txt'
 with open(fname,"r") as file:
@@ -24,6 +26,7 @@ with open(fname,"r") as file:
 
         cnt+=1
 
+#ノイズっぽい線を生成する。横列が偶数のとき、横線を描画してる
 def AnalogLike_noise(img):
     draw_flag=False
     draw = ImageDraw.Draw(img)
@@ -34,9 +37,9 @@ def AnalogLike_noise(img):
         draw_flag = not draw_flag
     return img
 
+#色収差を疑似的に作成したプログラム（改善の余地あり
 def Color_setting(img):
     width,height = img.size
-
     for y in range(height):
         for x in range(width):
             r, g, b , _= img.getpixel((x, y))
@@ -65,6 +68,29 @@ def get_frames(path):
 
 try:
     def img_convert(input_img):
+        # ファイル選択ダイアログの表示
+        root = tkinter.Tk()
+        root.withdraw()
+        fTyp1 = [("", "*.png")]
+        iDir = os.path.abspath(os.path.dirname(__file__))
+        image_data = tkinter.filedialog.askopenfilename(filetypes=fTyp1,initialdir=iDir)
+        print('AnalogTVLike-Converter START')
+        #image_data=input('plz image pass:')
+        #ファイルを正しく選択した場合、処理を行う。そうでない場合は終了。
+        if os.path.isfile(image_data):
+            print(image_data)
+            title=image_data[:-4]
+            input_img = Image.open(image_data)
+        else:
+            print('this image not exist.')
+            sys.exit()
+        #画像が大きすぎるとき、リサイズする
+        x,y=input_img.size
+        if x>1920 and y>1080:
+            x=1920
+            y=1080
+            input_img=input_img.resize((x,y))
+            print('resize image')
         input_img = input_img.convert('RGBA')
         gray_img = input_img.convert('L')
         # ノイズの追加
@@ -79,15 +105,14 @@ try:
         Analoglike_img = Color_setting(mix_img)
         Analoglike_img.putalpha(int(TRANSMITTANCE))
         new_mix_img = ImageChops.multiply(input_img, Analoglike_img)
-        # enhancerオブジェクト生成
+        # コントラスト処理
         enhancer = ImageEnhance.Contrast(new_mix_img)
-        # enhancerオブジェクトの強調
         enhance_image = enhancer.enhance(CONTRAST)
-        # enhancerオブジェクト生成
+        # 明るさ処理
         enhancer = ImageEnhance.Brightness(Analoglike_img)
-        # enhancerオブジェクトの強調
         enhance_image = enhancer.enhance(BRIGHTNESS)
         enhance_image.putalpha(255)
+        # ぼかし処理
         enhance_image.filter(ImageFilter.GaussianBlur(GAUSSIAN))
         return enhance_image
 
@@ -114,6 +139,15 @@ try:
             print(image_data)
             title=image_data[:-4]
             frames = get_frames(image_data)
+        #TV_Like=input('add frame?[y/N]') or 'n'
+        # フレームの有無
+        TV_Like=tkinter.messagebox.askquestion('showquestion', 'フレームを追加しますか？')
+        if TV_Like=='yes':
+            frame = Image.open('sample/frame.png')
+            frame_resize=frame.resize(enhance_image.size)
+            frame_resize = frame_resize.convert('RGBA')
+            enhance_image.paste(frame_resize,(0,0),frame_resize.split()[3])
+            out_frame = ('_frame_')
         else:
             print('this image not exist.')
             tkinter.messagebox.showerror('確認', '加工画像またはフレームがみつかりません。\nフレーム画像（frame.png）は、sampleという名前のディレクトリに入れてください。')
