@@ -70,5 +70,5 @@ png画像をアナログテレビ画面風に加工をするソフト。
 
 34mori.nono.0828@Gメール
 
-hira_655362@Twitter
+Twitter@hira_65536　
 
