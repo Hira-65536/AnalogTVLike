@@ -1,8 +1,7 @@
 # coding: utf-8
 import sys
-import numpy as np
 from PIL import Image, ImageFilter,ImageChops,ImageDraw,ImageEnhance,ImageSequence
-import os,tkinter, tkinter.filedialog, tkinter.messagebox
+import os,tkinter, tkinter.filedialog, tkinter.messagebox ,tkinter.simpledialog as simpledialog
 
 
 TV_Like = 'n'
@@ -10,7 +9,7 @@ GIF_FLAG = False
 
 #setting.txtから読み取り
 cnt=0
-fname = 'setting.txt'
+fname = '../../setting.txt'
 with open(fname,"r") as file:
     for i in file:
         if cnt == 0:
@@ -68,29 +67,6 @@ def get_frames(path):
 
 try:
     def img_convert(input_img):
-        # ファイル選択ダイアログの表示
-        root = tkinter.Tk()
-        root.withdraw()
-        fTyp1 = [("", "*.png")]
-        iDir = os.path.abspath(os.path.dirname(__file__))
-        image_data = tkinter.filedialog.askopenfilename(filetypes=fTyp1,initialdir=iDir)
-        print('AnalogTVLike-Converter START')
-        #image_data=input('plz image pass:')
-        #ファイルを正しく選択した場合、処理を行う。そうでない場合は終了。
-        if os.path.isfile(image_data):
-            print(image_data)
-            title=image_data[:-4]
-            input_img = Image.open(image_data)
-        else:
-            print('this image not exist.')
-            sys.exit()
-        #画像が大きすぎるとき、リサイズする
-        x,y=input_img.size
-        if x>1920 and y>1080:
-            x=1920
-            y=1080
-            input_img=input_img.resize((x,y))
-            print('resize image')
         input_img = input_img.convert('RGBA')
         gray_img = input_img.convert('L')
         # ノイズの追加
@@ -139,15 +115,6 @@ try:
             print(image_data)
             title=image_data[:-4]
             frames = get_frames(image_data)
-        #TV_Like=input('add frame?[y/N]') or 'n'
-        # フレームの有無
-        TV_Like=tkinter.messagebox.askquestion('showquestion', 'フレームを追加しますか？')
-        if TV_Like=='yes':
-            frame = Image.open('sample/frame.png')
-            frame_resize=frame.resize(enhance_image.size)
-            frame_resize = frame_resize.convert('RGBA')
-            enhance_image.paste(frame_resize,(0,0),frame_resize.split()[3])
-            out_frame = ('_frame_')
         else:
             print('this image not exist.')
             tkinter.messagebox.showerror('確認', '加工画像またはフレームがみつかりません。\nフレーム画像（frame.png）は、sampleという名前のディレクトリに入れてください。')
@@ -161,6 +128,7 @@ try:
                 input_img=input_img.resize((x,y))
                 print('resize image')
             enhance_image=img_convert(input_img)
+            enhance_image=enhance_image.crop((2, 0, x, y))
             #TV_Like=input('add frame?[y/N]') or 'n'
             if TV_Like=='yes':
                 frame = Image.open('sample/frame.png')
@@ -170,9 +138,10 @@ try:
                 out_frame = ('_frame_')
             else:
                 out_frame =('_')
-            result_img.append(enhance_image)
+            result_img.append(enhance_image)  
             count+=1
             print(str(count)+'枚目の処理終了')
+
 
         #result_img.show()
         if GIF_FLAG:
@@ -181,7 +150,15 @@ try:
             result_img[0].show()
         if 'yes'==tkinter.messagebox.askquestion('showquestion', '保存しますか？'):
             if GIF_FLAG:
-                result_img[0].save(title+out_frame+'output.gif',save_all=True, append_images=result_img[1:],duration=100,loop=0)
+                while(1):
+                    inputdata = simpledialog.askstring("Input Box", "GIF画像のフレーム数を入力してください。\n100～999の値を入力してください")
+                    if inputdata == None:
+                        continue
+                    if inputdata.isdecimal():
+                        inputdata=int(inputdata)
+                        if inputdata>=100 and inputdata<=999:
+                            result_img[0].save(title+out_frame+'output.gif',save_all=True, append_images=result_img[1:],duration=inputdata,loop=0)
+                            break
             else:
                 result_img[0].save(title + out_frame + 'output.' + format_img)
             tkinter.messagebox.showinfo('確認','保存に成功しました。')
