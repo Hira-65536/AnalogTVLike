@@ -3,27 +3,31 @@ import sys
 from PIL import Image, ImageFilter,ImageChops,ImageDraw,ImageEnhance,ImageSequence
 import os,tkinter, tkinter.filedialog, tkinter.messagebox ,tkinter.simpledialog as simpledialog
 
-
-TV_Like = 'n'
+TRANSMITTANCE = 153
+CONTRAST = 0.8
+BRIGHTNESS = 1.3
+GAUSSIAN = 1.3
+RED_THRESHOLD = 5
 GIF_FLAG = False
 
 #setting.txtから読み取り
 cnt=0
-fname = '../../setting.txt'
-with open(fname,"r") as file:
-    for i in file:
-        if cnt == 0:
-            TRANSMITTANCE=float(i.rstrip('\n'))
-        elif cnt == 1:
-            CONTRAST=float(i.rstrip('\n'))
-        elif cnt == 2:
-            BRIGHTNESS=float(i.rstrip('\n'))
-        elif cnt == 3:
-            GAUSSIAN=float(i.rstrip('\n'))
-        elif cnt == 4:
-            RED_THRESHOLD=float(i.rstrip('\n'))
+fname = 'setting.txt'
+if os.path.isfile(fname):
+    with open(fname,"r") as file:
+        for i in file:
+            if cnt == 0:
+                TRANSMITTANCE=float(i.rstrip('\n'))
+            elif cnt == 1:
+                CONTRAST=float(i.rstrip('\n'))
+            elif cnt == 2:
+                BRIGHTNESS=float(i.rstrip('\n'))
+            elif cnt == 3:
+                GAUSSIAN=float(i.rstrip('\n'))
+            elif cnt == 4:
+                RED_THRESHOLD=float(i.rstrip('\n'))
 
-        cnt+=1
+            cnt+=1
 
 #ノイズっぽい線を生成する。横列が偶数のとき、横線を描画してる
 def AnalogLike_noise(img):
@@ -93,6 +97,7 @@ try:
         return enhance_image
 
     def main():
+        TV_Like = 'n'
         count=0
         result_img=[]
         # ファイル選択ダイアログの表示
@@ -115,11 +120,14 @@ try:
             print(image_data)
             title=image_data[:-4]
             frames = get_frames(image_data)
+            TV_Like = tkinter.messagebox.askquestion('showquestion', 'フレームを追加しますか？')
         else:
             print('this image not exist.')
+            print(image_data)
+            title=image_data[:-4]
+            frames = get_frames(image_data)
             tkinter.messagebox.showerror('確認', '加工画像またはフレームがみつかりません。\nフレーム画像（frame.png）は、sampleという名前のディレクトリに入れてください。')
-            sys.exit()
-        TV_Like = tkinter.messagebox.askquestion('showquestion', 'フレームを追加しますか？')
+        
         for input_img in frames:
             x,y=input_img.size
             if x>1920 and y>1080:
